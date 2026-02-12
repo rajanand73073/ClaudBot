@@ -3,12 +3,14 @@ export function Grid({
   children
 }: {
   columns: number
-  children?: React.ReactNode
+  children: React.ReactNode
 }) {
   return (
     <div
-      className={`grid gap-4`}
-      style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+      className="grid gap-8"
+      style={{
+        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`
+      }}
     >
       {children}
     </div>

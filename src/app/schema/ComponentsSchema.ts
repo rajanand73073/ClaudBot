@@ -49,6 +49,6 @@ export const TableSchema = z.object({
   type: z.literal("Table"),
   props: z.object({
     headers: z.array(z.string()),
-    rows: z.array(z.array(z.string()))
-  }).strict()
+    rows: z.array(z.array(z.string())).optional()
+  })
 })

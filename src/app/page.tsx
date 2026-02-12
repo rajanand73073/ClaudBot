@@ -1,165 +1,43 @@
 "use client"
 
-import { useState } from "react"
-import axios, { AxiosError } from "axios"
-import { renderUIElement } from "../app/lib/RenderUi"
-
-type UIElement = any
+import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
 
 export default function Home() {
-  const [prompt, setPrompt] = useState("")
-  const [versions, setVersions] = useState<UIElement[]>([])
-  const [currentIndex, setCurrentIndex] = useState<number>(-1)
-  const [explanation, setExplanation] = useState<string>("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const currentPlan =
-    currentIndex >= 0 ? versions[currentIndex] : null
-
-  /**
-   * Generate or Modify Plan
-   */
-  const handleGenerate = async () => {
-    if (!prompt.trim()) return
-
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const previousPlan =
-        currentIndex >= 0 ? versions[currentIndex] : null
-
-      // 🔥 Planner Call
-      const plannerRes = await axios.post("/api/plan", {
-        prompt,
-        previousPlan
-      })
-
-      const newPlan = plannerRes.data.plan
-
-      // 🔥 Prevent history branching corruption
-      setVersions(prev => {
-        const base = prev.slice(0, currentIndex + 1)
-        return [...base, newPlan]
-      })
-
-      setCurrentIndex(prev => prev + 1)
-
-      // 🔥 Explainer Call
-      const explainRes = await axios.post("/api/explain", {
-        prompt,
-        newPlan,
-        previousPlan
-      })
-
-      setExplanation(explainRes.data.explanation)
-
-      setPrompt("")
-    } catch (err) {
-      if (err instanceof AxiosError) {
-        setError(
-          err.response?.data?.error ||
-          err.message ||
-          "Something went wrong"
-        )
-      } else {
-        setError("Unexpected error occurred")
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  /**
-   * Rollback to specific version
-   */
-  const handleRollback = (index: number) => {
-    setCurrentIndex(index)
-    setExplanation("Rolled back to selected version.")
-  }
-
-  /**
-   * Reset Everything
-   */
-  const handleReset = () => {
-    setVersions([])
-    setCurrentIndex(-1)
-    setExplanation("")
-    setPrompt("")
-    setError(null)
-  }
+  const router = useRouter()
 
   return (
-    <div className="p-6 space-y-6">
-
-      {/* Prompt Section */}
-      <div className="flex gap-2">
-        <input
-          className="border px-3 py-2 w-full rounded"
-          placeholder="Describe your UI..."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-        />
-
-        <button
-          onClick={handleGenerate}
-          disabled={isLoading}
-          className="bg-black text-white px-4 py-2 rounded"
+    <div className="min-h-screen bg-linear-to-br from-purple-100 via-purple-300 to-sky-500 flex items-center justify-center px-6">
+      
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="bg-gray-900/30 backdrop-blur-xl p-12 rounded-3xl shadow-2xl text-center max-w-2xl"
+      >
+        <motion.h1
+          initial={{ scale: 0.9 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.6 }}
+          className="text-4xl md:text-5xl font-bold text-white mb-6"
         >
-          {isLoading ? "Generating..." : "Generate"}
-        </button>
+          Deterministic UI Generator
+        </motion.h1>
 
-        <button
-          onClick={handleReset}
-          className="bg-gray-200 px-4 py-2 rounded"
+        <p className="text-white text-lg mb-10 opacity-90">
+          Transform natural language into structured, validated, 
+          and explainable UI designs.
+        </p>
+
+        <motion.button
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => router.push("/Generator")}
+          className="px-8 py-4 bg-white text-pink-600 font-semibold rounded-full shadow-lg hover:shadow-xl transition-all"
         >
-          Reset
-        </button>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className="text-red-500 text-sm">
-          {error}
-        </div>
-      )}
-
-      {/* Version History */}
-      {versions.length > 0 && (
-        <div className="flex gap-2 flex-wrap">
-          {versions.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => handleRollback(index)}
-              className={`px-3 py-1 rounded text-sm ${
-                index === currentIndex
-                  ? "bg-black text-white"
-                  : "bg-gray-200"
-              }`}
-            >
-              Version {index}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Rendered UI */}
-      <div className="border p-4 min-h-[300px] bg-white rounded">
-        {currentPlan
-          ? renderUIElement(currentPlan)
-          : "No UI generated yet."}
-      </div>
-
-      {/* Explanation Section */}
-      {explanation && (
-        <div className="bg-gray-50 p-4 rounded text-sm">
-          <h3 className="font-semibold mb-2">
-            Explanation
-          </h3>
-          <p>{explanation}</p>
-        </div>
-      )}
+          Create a Design
+        </motion.button>
+      </motion.div>
     </div>
   )
 }

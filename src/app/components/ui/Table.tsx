@@ -6,11 +6,11 @@ export function Table({
   rows: string[][]
 }) {
   return (
-    <table className="w-full border border-gray-200">
+    <table className="w-full border">
       <thead>
         <tr>
           {headers.map((h, i) => (
-            <th key={i} className="border px-2 py-1 text-left text-sm">
+            <th key={i} className="border px-2 py-1 text-left text-sm text-black">
               {h}
             </th>
           ))}
@@ -20,7 +20,7 @@ export function Table({
         {rows.map((row, i) => (
           <tr key={i}>
             {row.map((cell, j) => (
-              <td key={j} className="border px-2 py-1 text-sm">
+              <td key={j} className="border px-2 py-1 text-sm text-black">
                 {cell}
               </td>
             ))}
