@@ -1,94 +1,109 @@
-"use client"
-import { useState } from "react"
-import axios, { AxiosError } from "axios"
-import { motion } from "framer-motion"
-import { renderUIElement } from "../lib/RenderUi"
+"use client";
+import { useState } from "react";
+import axios, { AxiosError } from "axios";
+import { motion } from "framer-motion";
+import { renderUIElement } from "../lib/RenderUi";
 
 export default function GeneratorPage() {
-  const [prompt, setPrompt] = useState("")
-  const [plan, setPlan] = useState<any | null>(null)
-  const [explanation, setExplanation] = useState("")
-  const [versions, setVersions] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-
-  function sanitizePrompt(input: string) {
-    return input.trim()
-  }
+  const [prompt, setPrompt] = useState("");
+  const [plan, setPlan] = useState<any | null>(null);
+  const [explanation, setExplanation] = useState("");
+  const [versions, setVersions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleGenerate() {
-    const cleanPrompt = sanitizePrompt(prompt)
-
-    if (!cleanPrompt) return
-
-    setLoading(true)
-    setError("")
-
+    const cleanPrompt = prompt.trim();
+    if (!cleanPrompt) return;
+    setLoading(true);
+    setError("");
     try {
-      const previousPlan =
-        versions.length > 0 ? versions[versions.length - 1] : null
+      const previousPlan = versions.length > 0 ? versions[versions.length - 1] : null;
 
       const planRes = await axios.post("/api/plan", {
         prompt: cleanPrompt,
-        previousPlan
-      })
+        previousPlan,
+      });
+      
+      console.log("planRes",planRes.data.plan.data)
+    
 
-      if (!planRes.data || !planRes.data.plan) {
-        throw new Error("Planner did not return a valid plan")
-      }
+      const newPlan = planRes.data.plan.data;
+        if (!newPlan) {
+          throw new Error("Planner returned malformed response.");
+}
 
-      const newPlan = planRes.data.plan
-
-      if (typeof newPlan !== "object" || !newPlan.type) {
-        throw new Error("Invalid plan structure")
-      }
-
-      // Save new version
-      setVersions((prev) => [...prev, newPlan])
-      setPlan(newPlan)
-
+      setVersions((prev) => [...prev, newPlan]);
+      setPlan(newPlan);
       const explainRes = await axios.post("/api/explain", {
         prompt: cleanPrompt,
         newPlan,
-        previousPlan
-      })
+        previousPlan,
+      });
 
       if (explainRes.data?.explanation) {
-        setExplanation(explainRes.data.explanation)
+        setExplanation(explainRes.data.explanation);
       } else {
-        setExplanation("No explanation generated.")
+        setExplanation("No explanation generated.");
       }
 
-      setPrompt("")
+      setPrompt("");
     } catch (err) {
-      const axiosError = err as AxiosError<any>
+      const axiosError = err as AxiosError<any>;
+     if (axiosError.response) {
+    const data = axiosError.response.data
 
-      if (axiosError.response) {
-        setError(
-          axiosError.response.data?.error ||
-            "Server error occurred."
-        )
-      } else if (axiosError.request) {
-        setError("Network error. Please try again.")
-      } else {
-        setError(err instanceof Error ? err.message : "Unexpected error.")
-      }
-    } finally {
-      setLoading(false)
+  if (data.details) {
+    try {
+      const explainRes = await axios.post("/api/explain", {
+        mode: "validation-error",
+        prompt: cleanPrompt,
+        validationError: data.details,
+        rawOutput: data.rawOutput
+      })
+
+      setError(explainRes.data.explanation)
+
+    } catch (explainErr) {
+      setError("Validation failed, and explanation could not be generated.")
+    }
+  } else {
+    setError(data.error || "Planner failed.")
+  }}
+}
+finally {
+      setLoading(false);
     }
   }
 
   function handleRollback(index: number) {
-    const selected = versions[index]
-    setPlan(selected)
-    setVersions(versions.slice(0, index + 1))
+    const selected = versions[index];
+    setPlan(selected);
+    setVersions(versions.slice(0, index + 1));
   }
 
   return (
     <div className="h-screen bg-gray-100 flex flex-col">
-
       {/* 🔹 TOP INPUT BAR */}
-      <div className="border-b bg-white px-6 py-4 shadow-sm">
+      <div className="relative border-b bg-white px-6 py-4 shadow-sm">
+        <div className="absolute right-6 top-4 flex gap-3 items-center">
+          {versions.length > 1 && (
+            <>
+              {versions.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setPlan(versions[index]);
+                  }}
+                  className="text-xs border-0 px-3 py-1 rounded-full text-black hover:bg-gray-200 hover:text-pink-600"
+                >
+                  v{index + 1}
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+
         <div className="max-w-6xl mx-auto flex gap-4 items-center">
           <input
             value={prompt}
@@ -107,19 +122,18 @@ export default function GeneratorPage() {
           </motion.button>
         </div>
 
-        {error && (
-          <p className="text-red-600 text-sm mt-2 max-w-6xl mx-auto">
-            {error}
-          </p>
-        )}
+       {error && (
+         <div className="bg-red-50 border border-red-200 text-red-700 text-sm mt-4 p-4 rounded-lg whitespace-pre-wrap">
+           {error}
+             </div>
+)}
+
       </div>
 
       {/* 🔹 MAIN CONTENT AREA */}
       <div className="flex flex-1 overflow-hidden">
-
         {/* LEFT PANEL */}
         <div className="w-96 bg-white border-r flex flex-col">
-
           <div className="p-6 border-b">
             <h2 className="text-lg font-semibold text-gray-900">
               AI Explanation
@@ -151,26 +165,22 @@ export default function GeneratorPage() {
         </div>
 
         {/* PREVIEW PANEL */}
-<div className="flex-1 flex justify-center overflow-auto p-10">
-
-<div className="w-full max-w-6xl bg-gray-100 rounded-3xl p-12 shadow-inner">
-            {plan ? (
-              <motion.div
-                key={JSON.stringify(plan)}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                {renderUIElement(plan)}
-              </motion.div>
-            ) : (
-              <div className="text-gray-600 text-center mt-20">
-                Your UI preview will appear here.
-              </div>
-            )}
-          </div>
-
+        <div className="w-full max-w-6xl bg-gray-100 rounded-3xl p-12 shadow-inner overflow-auto">
+          {plan ? (
+            <motion.div
+              key={JSON.stringify(plan)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              {renderUIElement(plan)}
+            </motion.div>
+          ) : (
+            <div className="text-gray-600 text-center mt-20">
+              Your UI preview will appear here.
+            </div>
+          )}
         </div>
       </div>
     </div>
-  )
+  );
 }

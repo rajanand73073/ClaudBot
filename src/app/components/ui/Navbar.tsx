@@ -1,7 +1,7 @@
 export function Navbar({ title }: { title: string }) {
   return (
-    <nav className="bg-white shadow px-4 py-3 mb-6">
-      <h1 className="text-lg font-bold">{title}</h1>
+    <nav className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition">
+      <h1 className="text-lg font-bold text-black">{title}</h1>
     </nav>
   )
 }

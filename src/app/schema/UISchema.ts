@@ -15,7 +15,7 @@ export const UISchema: z.ZodType<any> = z.lazy(() =>
 
     z.object({
       type: z.literal("PageLayout"),
-      props: z.object({}).optional(),
+      props: z.object({layout: z.enum(["default", "sidebar-left", "sidebar-right"]).optional()}).strict().optional(),
       children: z.array(UISchema),
     }).strict(),
 

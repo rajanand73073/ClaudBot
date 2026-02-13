@@ -19,7 +19,7 @@ This system allows users to:
 The system is designed to prevent hallucinated components, unsafe rendering, and uncontrolled styling.
 ---
 
-## 🏗 Architecture
+##  Architecture
 
 The system follows a multi-step agent pipeline:
 
@@ -133,7 +133,7 @@ This satisfies the requirement for incremental updates instead of full rewrites.
 
 ## 🤖 Model Selection
 
-We use Groq-hosted open-source models (e.g., LLaMA 3).
+We use Groq-hosted open-source models (e.g., LLaMA 3,openAI).
 
 Reasons:
 - Fast inference
@@ -142,8 +142,8 @@ Reasons:
 - OpenAI-compatible API
 - Deterministic low-temperature generation
 
-Planner temperature: `0.2`  
-Explainer temperature: `0.4`
+Planner temperature: `0.1`  
+Explainer temperature: `0.2`
 
 
 
@@ -156,3 +156,167 @@ Explainer temperature: `0.4`
 - Component registry whitelist
 - No client-side API key exposure
 
+---
+
+## ⚠️ Validation Error Handling & Deterministic Enforcement
+
+The system intentionally does **not auto-correct or silently mutate invalid outputs**.
+
+Instead, it enforces strict validation transparency.
+
+### Validation Flow
+
+When the Planner generates a UI plan:
+
+1. JSON is parsed.
+2. The plan is validated against `UISchema`.
+3. If validation fails:
+   - The system blocks rendering.
+   - Structured validation errors are returned.
+   - The Explainer is triggered in **validation-error mode**.
+
+No invalid UI is ever rendered.
+
+---
+
+## Validation Error Explanation Mode
+
+The Explainer supports a dedicated `validation-error` mode.
+
+In this mode:
+
+- It receives:
+  - User prompt
+  - Raw invalid output
+  - Zod validation errors
+- It explains:
+  - Which property or structure failed
+  - Why it violates the deterministic schema
+  - How to fix the request
+  - Suggest alternative prop names
+
+- It does NOT:
+  - Suggest styling hacks
+  - Invent unsupported properties
+
+This ensures explanations remain aligned with the deterministic design rules.
+
+Example failure:
+
+
+Explained as:
+
+- The property is not part of the allowed schema.
+- Styling properties are not supported.
+- Only predefined props are allowed.
+
+---
+
+## 🧠 Semantic Constraint Awareness
+
+The system enforces structural correctness at the schema level.
+
+For example:
+
+- `PageLayout` must always exist as the root.
+- `Card` does not allow children.
+- Components cannot contain arbitrary nested layouts unless defined in schema.
+
+If a user requests:
+
+
+The planner preserves the required root structure rather than generating invalid output.
+
+
+
+## Structural Validation Strategy
+
+Validation occurs in two stages:
+
+### Stage 1 — Syntax Validation
+- Ensures JSON is valid.
+- Ensures schema compliance.
+
+### Stage 2 — Deterministic Enforcement
+- Blocks unknown fields.
+- Prevents unsupported nesting.
+- Enforces root structure.
+
+This separation mimics compiler-style validation.
+
+---
+
+## Robust Error Pipeline
+
+The system uses layered error handling:
+
+
+All async calls are safely wrapped in `try/catch`.
+No unhandled promise rejections.
+No undefined plan access.
+
+---
+
+## 📦 Versioning & Iteration Tracking
+
+The system supports:
+
+- Plan version history
+- Rollback to previous versions
+- Iterative modification instead of regeneration
+- Change-aware explanations
+
+Users can navigate between versions safely.
+
+---
+
+
+## 📊 Why This Is Deterministic
+
+The AI does NOT:
+
+- Create new components
+- Create new props
+- Generate CSS
+- Modify component styling
+- Inject dynamic behavior
+
+The AI only:
+
+- Selects from allowed components
+- Arranges layout structure
+- Fills predefined props
+- Modifies existing plans incrementally
+
+Rendering remains fully controlled by the fixed component registry.
+
+Key principles:
+
+- Safety over creativity
+- Structure over styling
+- Validation before rendering
+- Transparency over silent correction
+- Fixed component grammar
+- Controlled recursion
+- No runtime mutation
+
+---
+
+
+
+## 🏁 Conclusion
+
+This project demonstrates:
+
+- Deterministic AI system design
+- Structured schema enforcement
+- Multi-agent pipeline architecture
+- Validation-first rendering
+- Safe UI generation
+- Controlled AI usage
+
+It is not a free-form UI generator.
+
+It is a constrained, validated, explainable UI composition engine.
+
+---

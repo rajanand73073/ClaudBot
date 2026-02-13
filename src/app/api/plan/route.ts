@@ -20,6 +20,8 @@ STRICT RULES:
 - No JSX.
 - Do NOT invent components.
 - Only use allowed components.
+ -No creative interpretation.
+- Follow deterministic behavior strictly.
 All UIs must be wrapped inside PageLayout.
 
 Structural Rules:
@@ -35,6 +37,20 @@ Layout rules:
 - Grid requires "columns" between 1 and 4.
 - Leaf components should not contain children.
 
+
+LOGICAL FAILURE RULES:
+If a user request violates structural rules:
+
+- Do NOT attempt to approximate.
+- Do NOT try to "stay valid" by restructuring.
+- Instead return an error object:
+
+{
+  "error": "Logical violation",
+  "message": "Clear explanation of why the request is invalid."
+}
+
+
 Position semantics:
 - "Left" → first element in children array.
 - "Right" → last element.
@@ -47,7 +63,7 @@ If a previous plan is provided:
 - Preserve structure.
 - Do not regenerate entire layout unless explicitly requested.
 - Apply only the requested change.
-
+- If user requests removal of a mandatory component, return a validation error.
 Allowed components:
 (PageLayout, Section, Grid, Navbar, Sidebar, Card, Button, Input, Modal, Table)
 IMPORTANT:
@@ -70,7 +86,24 @@ Allowed Components:
 - Modal
 - Table
 
+
 IMPORTANT:
+When generating dashboards:
+
+- Place Navbar at top inside PageLayout.
+- If multiple sidebars requested:
+    - Place first sidebar as left navigation.
+    - Place second sidebar as right utility panel.
+- If more than 4 cards requested:
+    - Use Grid with maximum 3 columns.
+- If multiple tables requested:
+    - Place tables below card grid inside Section.
+- If inputs and buttons requested:
+    - Group them inside a separate Section below tables.
+- Do not stack all components directly under PageLayout.
+- Use Section to group logical blocks.
+-If more than 4 cards, use at most 3 columns.Use ceil(sqrt(cardCount)) but cap at 3.
+
 
 If a table is requested and rows are not specified,
 generate at least 3 example rows matching the headers.
@@ -94,9 +127,7 @@ If user asks to add component:
 
 Every component that requires props MUST include them.
 If a component requires props and they are missing, the output will be rejected.
-
 Component Requirements (MANDATORY):
-
 Navbar:
 {
   "type": "Navbar",
@@ -125,7 +156,6 @@ Card:
 
 DO NOT omit required props.
 DO NOT leave props undefined.
-
 `
 
 
@@ -159,22 +189,28 @@ export async function POST(req: Request) {
     })
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.1,
-      messages
+    model: "openai/gpt-oss-120b",
+    messages
     })
 
     const rawOutput:string = completion.choices?.[0]?.message?.content as string
-    console.log("RAW OUTPUT:", rawOutput)
     const cleanedJSON = extractJSON(rawOutput)
     const parsed = JSON.parse(cleanedJSON)
     const validatedPlan = validateUI(parsed)
+
+if (!validatedPlan.success) {
+  return NextResponse.json(
+    {
+      error: "Schema validation failed",
+      details: validatedPlan.error,
+      rawOutput: parsed
+    },
+    { status: 400 }
+  )
+}
     return NextResponse.json({ plan: validatedPlan })
-  } catch (error) {
-    console.error("Planner Error:", error)
-    return NextResponse.json(
-      { error: "Failed to generate UI plan" },
-      { status: 500 }
-    )
-  }
+  } catch (error: any) {
+    console.error("error",error)
+    return error
+}
 }
