@@ -189,7 +189,7 @@ export async function POST(req: Request) {
     })
 
     const completion = await groq.chat.completions.create({
-    model: "openai/gpt-oss-120b",
+    model: "groq/compound",
     messages
     })
 

@@ -133,7 +133,7 @@ This satisfies the requirement for incremental updates instead of full rewrites.
 
 ## 🤖 Model Selection
 
-We use Groq-hosted open-source models (e.g., LLaMA 3,openAI).
+We use Groq-hosted open-source models (e.g., LLaMA 3,openAI,groq/compound).
 
 Reasons:
 - Fast inference

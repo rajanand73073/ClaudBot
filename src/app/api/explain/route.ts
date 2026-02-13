@@ -71,7 +71,7 @@ export async function POST(req: Request) {
 
     if (mode === "validation-error") {
       const completion = await groq.chat.completions.create({
-    model: "openai/gpt-oss-120b",
+    model:"llama-3.3-70b-versatile",
         temperature: 0.3,
         messages: [
           {
@@ -134,8 +134,8 @@ Explain the reasoning behind this design.
 `;
 
     const completion = await groq.chat.completions.create({
-      model: "openai/gpt-oss-120b",
-      temperature: 0.3,
+       model: "llama-3.3-70b-versatile",
+       temperature: 0.3,
       messages: [
         { role: "system", content: SYSTEM_PROMPT_1 },
         { role: "user", content: userContent },
