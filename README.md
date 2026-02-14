@@ -319,6 +319,7 @@ It is not a free-form UI generator.
 
 It is a constrained, validated, explainable UI composition engine.
 ## 🌐 Live Link
--https://lnkd.in/gnj2utts
+- https://lnkd.in/gnj2utts
+- determinsticui-git-main-rajanand73073s-projects.vercel.app
 
 ---
